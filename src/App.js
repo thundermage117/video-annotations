@@ -2,10 +2,11 @@
 import React, { useState } from 'react';
 import './App.css';
 import VideoUploader from './VideoUploader';
-import VideoPlayer from './VideoPlayer';
+import AnnotationManager from './AnnotationManager';
 
 function App() {
     const [videoSrc, setVideoSrc] = useState('');
+    const [annotations, setAnnotations] = useState([]);
 
     return (
         <div className="App">
@@ -14,7 +15,7 @@ function App() {
             {videoSrc && (
                 <>
                     <h2>Uploaded Video:</h2>
-                    <VideoPlayer videoSrc={videoSrc} />
+                    <AnnotationManager videoSrc={videoSrc} annotations={annotations} setAnnotations={setAnnotations} />
                 </>
             )}
         </div>
