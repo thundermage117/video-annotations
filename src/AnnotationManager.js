@@ -1,9 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const predefinedTags = ['Car', 'Tree', 'Building'];
-const predefinedColors = ['red', 'green', 'blue', 'yellow', 'purple']; // Define some colors
-
-const AnnotationManager = ({ videoSrc, annotations, setAnnotations }) => {
+const AnnotationManager = ({ videoSrc, annotations, setAnnotations, videoId }) => {
     const [currentTag, setCurrentTag] = useState('');
     const [currentColor, setCurrentColor] = useState('red'); // Default color
     const [drawing, setDrawing] = useState(false);
@@ -13,18 +10,24 @@ const AnnotationManager = ({ videoSrc, annotations, setAnnotations }) => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
 
+    // Draw all annotations
     useEffect(() => {
-        console.log("Video source changed:", videoSrc);
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d');
-
-        if (context && rect) {
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            context.strokeStyle = currentColor; // Use the current color
-            context.lineWidth = 2;
-            context.strokeRect(rect.startX, rect.startY, rect.width, rect.height);
+        if (context) {
+            context.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas before redrawing
+            annotations.forEach(annotation => {
+                context.strokeStyle = annotation.color; // Use the color of the annotation
+                context.lineWidth = 2;
+                context.strokeRect(
+                    annotation.x,
+                    annotation.y,
+                    annotation.width,
+                    annotation.height
+                );
+            });
         }
-    }, [rect, currentColor]);
+    }, [annotations, videoSrc, videoId]); // Add videoId as dependency to redraw on video change
 
     useEffect(() => {
         if (editingIndex !== null) {
@@ -42,12 +45,6 @@ const AnnotationManager = ({ videoSrc, annotations, setAnnotations }) => {
             videoRef.current.currentTime = annotation.time;
         }
     }, [editingIndex, annotations]);
-
-    useEffect(() => {
-        if (videoRef.current) {
-            videoRef.current.src = videoSrc;
-        }
-    }, [videoSrc]);
 
     const handleMouseDown = (e) => {
         if (!videoRef.current) return;
@@ -125,14 +122,14 @@ const AnnotationManager = ({ videoSrc, annotations, setAnnotations }) => {
             <h2>Annotations</h2>
             <select value={currentTag} onChange={(e) => setCurrentTag(e.target.value)}>
                 <option value="">Select a tag</option>
-                {predefinedTags.map((tag) => (
+                {['Car', 'Tree', 'Building'].map((tag) => (
                     <option key={tag} value={tag}>
                         {tag}
                     </option>
                 ))}
             </select>
             <select value={currentColor} onChange={(e) => setCurrentColor(e.target.value)}>
-                {predefinedColors.map((color) => (
+                {['red', 'green', 'blue', 'yellow', 'purple'].map((color) => (
                     <option key={color} value={color} style={{ backgroundColor: color }}>
                         {color}
                     </option>

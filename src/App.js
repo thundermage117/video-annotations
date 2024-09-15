@@ -1,100 +1,95 @@
 import React, { useState, useEffect } from 'react';
 import AnnotationManager from './AnnotationManager';
-import axios from 'axios';
 
 const App = () => {
     const [videos, setVideos] = useState([]);
     const [selectedVideo, setSelectedVideo] = useState('');
     const [annotations, setAnnotations] = useState([]);
-    const [uploadFile, setUploadFile] = useState(null);
-    const [uploading, setUploading] = useState(false);
+    const [videoId, setVideoId] = useState('');
 
-    useEffect(() => {
-        fetchVideos();  // Fetch videos on component mount
-    }, []);
-
-    useEffect(() => {
-        console.log("Selected video changed:", selectedVideo);
-        // Clear annotations when video changes
-        setAnnotations([]);
-    }, [selectedVideo]);
-
+    // Fetch videos from the backend
     const fetchVideos = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/videos');
-            console.log("Fetched videos:", response.data);
-            setVideos(response.data.videos);
+            const response = await fetch('http://localhost:5000/videos');
+            if (!response.ok) throw new Error('Failed to fetch videos');
+            const data = await response.json();
+            setVideos(data);
         } catch (error) {
-            console.error('Error fetching videos:', error);
+            console.error('Failed to fetch videos:', error);
         }
     };
 
-    const handleVideoSelect = (event) => {
-        console.log("Video selected:", event.target.value);
-        setSelectedVideo(event.target.value);
-        // Optionally, fetch annotations for the selected video here if needed
+    // Fetch annotations for a selected video
+    const fetchAnnotations = async (videoId) => {
+        try {
+            const response = await fetch(`http://localhost:5000/annotations/${videoId}`);
+            if (!response.ok) throw new Error('Failed to fetch annotations');
+            const data = await response.json();
+            setAnnotations(data);
+        } catch (error) {
+            console.error('Failed to fetch annotations:', error);
+        }
     };
 
-    const handleFileChange = (event) => {
-        setUploadFile(event.target.files[0]);
-    };
-
-    const handleUpload = async (event) => {
-        event.preventDefault();
-        if (!uploadFile) return;
+    // Handle file upload
+    const handleFileUpload = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
 
         const formData = new FormData();
-        formData.append('file', uploadFile);
+        formData.append('file', file);
 
         try {
-            setUploading(true);
-            const response = await axios.post('http://localhost:5000/upload', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+            const response = await fetch('http://localhost:5000/upload', {
+                method: 'POST',
+                body: formData,
             });
-            await fetchVideos();  // Refresh the video list after uploading
-            alert(response.data.message);
+            if (!response.ok) throw new Error('Failed to upload file');
+            const data = await response.json();
+            setSelectedVideo(data.videoUrl);
+            // Optionally, refetch the list of videos
+            await fetchVideos(); // Fetch videos after upload
         } catch (error) {
-            console.error('Error uploading file:', error);
-            alert('Error uploading file');
-        } finally {
-            setUploading(false);
-            setUploadFile(null);
+            console.error('Failed to upload file:', error);
         }
     };
+
+    // Handle video selection
+    const handleVideoChange = (e) => {
+        const videoSrc = e.target.value;
+        setSelectedVideo(videoSrc);
+        const selectedVideoId = videos.find(video => video.url === videoSrc)?.id;
+        setVideoId(selectedVideoId);
+        // Fetch annotations for the selected video
+        if (selectedVideoId) {
+            fetchAnnotations(selectedVideoId);
+        }
+    };
+
+    useEffect(() => {
+        fetchVideos(); // Fetch videos when the component mounts
+    }, []);
 
     return (
         <div>
             <h1>Video Annotation Tool</h1>
-
+            <input type="file" accept="video/*" onChange={handleFileUpload} />
             <div>
-                <label htmlFor="video-select">Select a video:</label>
-                <select id="video-select" value={selectedVideo} onChange={handleVideoSelect}>
+                <select value={selectedVideo} onChange={handleVideoChange}>
                     <option value="">Select a video</option>
                     {videos.map((video) => (
-                        <option key={video.url} value={video.url}>
-                            {video.filename}
+                        <option key={video.id} value={video.url}>
+                            {video.name}
                         </option>
                     ))}
                 </select>
             </div>
-
-            <div>
-                <h2>Upload a new video</h2>
-                <form onSubmit={handleUpload}>
-                    <input type="file" accept="video/*" onChange={handleFileChange} />
-                    <button type="submit" disabled={uploading}>
-                        {uploading ? 'Uploading...' : 'Upload Video'}
-                    </button>
-                </form>
-            </div>
-
             {selectedVideo && (
                 <AnnotationManager
                     videoSrc={selectedVideo}
                     annotations={annotations}
                     setAnnotations={setAnnotations}
+                    videoId={videoId}
                 />
             )}
         </div>
