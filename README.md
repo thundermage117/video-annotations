@@ -1,70 +1,128 @@
-# Getting Started with Create React App
+# Video Annotation Tool
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Overview
 
-## Available Scripts
+The Video Annotation Tool allows users to annotate videos with custom tags and colors. Annotations can be used to mark specific objects or events within a video. This tool is built with React for the frontend and Flask for the backend, using PostgreSQL to store video and annotation data.
 
-In the project directory, you can run:
+## Features
 
-### `npm start`
+- **Video Selection and Playback:**
+  - Select a video from a dropdown menu.
+  - View and play the selected video in the player.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Annotation Management:**
+  - Draw rectangles on the video to annotate specific areas.
+  - Customize annotations with predefined tags and colors.
+  - Add and save new annotations with a click.
+  - Edit existing annotations.
+  - Delete annotations.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Drawing and Editing Annotations:**
+  - Draw rectangles by clicking and dragging on the video.
+  - Use the annotation toolbar to select tags and colors.
+  - Adjust annotation attributes and save changes.
 
-### `npm test`
+- **Backend Integration:**
+  - Fetch video URLs and annotations from the backend.
+  - Save new annotations to the backend database.
+  - Load existing annotations when selecting a video.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **File Upload:**
+  - Upload new video files to the backend server.
+  - Automatically update the video list after a successful upload.
 
-### `npm run build`
+## Installation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Prerequisites
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- Node.js
+- Python
+- PostgreSQL
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Backend Setup
 
-### `npm run eject`
+1. Clone the repository and navigate to the backend directory:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+   ```bash
+   git clone https://github.com/thundermage117/video-annotations
+   cd video-annotations/backend
+   ```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2. Create and activate a virtual environment:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   ```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+3. Install the required Python packages:
 
-## Learn More
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+4. Set up the PostgreSQL database:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+   - Create the `video` and `annotation` tables in PostgreSQL.
+   - Update the database connection details in `config.py`.
 
-### Code Splitting
+5. Run the Flask server:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+   ```bash
+   python app.py
+   ```
 
-### Analyzing the Bundle Size
+### Frontend Setup
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+1. Navigate to the frontend directory:
 
-### Making a Progressive Web App
+   ```bash
+   cd ../frontend
+   ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+2. Install the required Node.js packages:
 
-### Advanced Configuration
+   ```bash
+   npm install
+   ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+3. Start the React development server:
 
-### Deployment
+   ```bash
+   npm start
+   ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## Usage
 
-### `npm run build` fails to minify
+1. **Select a Video:**
+   - Choose a video from the dropdown menu.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+2. **Annotate the Video:**
+   - Click and drag on the video to create an annotation.
+   - Use the annotation toolbar to select tags and colors.
+   - Save the annotation by clicking the "Save Annotation" button.
+
+3. **Manage Annotations:**
+   - View and manage annotations in the list below the video.
+   - Edit or delete annotations as needed.
+
+4. **Upload New Videos:**
+   - Use the upload form to add new videos to the system.
+
+## API Endpoints
+
+- `GET /videos` - Fetch the list of available videos.
+- `GET /video_url/:id` - Get the URL of the selected video.
+- `GET /annotations/:videoId` - Fetch annotations for the specified video.
+- `POST /annotations/:videoId` - Save a new annotation for the specified video.
+- `POST /upload` - Upload a new video file.
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request on GitHub.
+
+## License
+
+This project is licensed under the MIT License.
+
+---

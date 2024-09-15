@@ -1,39 +1,55 @@
 /* src/App.css */
-.App {
+/* App.css */
+
+/* Ensure the body takes up the full height of the viewport */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* Center everything within the App container */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
   text-align: center;
 }
 
-button {
-  margin-top: 10px;
+/* Style for the upload form */
+.upload-form {
+  margin-bottom: 20px;
 }
 
-input[type="file"] {
-  margin-top: 20px;
+/* Style for the video select dropdown */
+.video-select {
+  margin-bottom: 20px;
 }
 
-select {
-  margin: 20px 0;
+/* Style for the annotation manager container */
+.annotation-manager {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 600px; /* Match the video width */
 }
 
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-li {
-  margin: 5px 0;
-}
-
+/* Style for the video element */
 video {
   border: 1px solid #ccc;
-  display: block;
-  margin: 20px auto;
-  max-width: 100%;
 }
 
-input[type="file"] {
-  margin-top: 20px;
+/* Style for the canvas element */
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
 }
+
 
 .App-logo {
   height: 40vmin;
