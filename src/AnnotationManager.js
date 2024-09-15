@@ -1,4 +1,3 @@
-// src/AnnotationManager.js
 import React, { useState, useRef, useEffect } from 'react';
 
 const predefinedTags = ['Car', 'Tree', 'Building'];
@@ -15,6 +14,7 @@ const AnnotationManager = ({ videoSrc, annotations, setAnnotations }) => {
     const canvasRef = useRef(null);
 
     useEffect(() => {
+        console.log("Video source changed:", videoSrc);
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d');
 
@@ -42,6 +42,12 @@ const AnnotationManager = ({ videoSrc, annotations, setAnnotations }) => {
             videoRef.current.currentTime = annotation.time;
         }
     }, [editingIndex, annotations]);
+
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.src = videoSrc;
+        }
+    }, [videoSrc]);
 
     const handleMouseDown = (e) => {
         if (!videoRef.current) return;
