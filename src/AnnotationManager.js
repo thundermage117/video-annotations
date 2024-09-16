@@ -1,37 +1,57 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 const predefinedTags = ['Car', 'Tree', 'Building'];
-const predefinedColors = ['red', 'green', 'blue', 'yellow', 'purple'];
+const predefinedColors = ['red', 'green', 'blue', 'yellow', 'purple']; // Define some colors
 
-const AnnotationManager = ({ videoSrc, annotations, setAnnotations }) => {
-    const [currentTag, setCurrentTag] = useState('');
-    const [currentColor, setCurrentColor] = useState('red');
-    const [drawing, setDrawing] = useState(false);
-    const [rect, setRect] = useState(null);
-    const [currentTime, setCurrentTime] = useState(null);
-    const [editingIndex, setEditingIndex] = useState(null);
-    const videoRef = useRef(null);
-    const canvasRef = useRef(null);
 
-    // Draw the rectangle on the canvas
+const AnnotationManager = ({ videoSrc, annotations, setAnnotations, selectedVideoId }) => {
+  const [currentTag, setCurrentTag] = useState('');
+  const [currentColor, setCurrentColor] = useState('red'); // Default color
+  const [drawing, setDrawing] = useState(false);
+  const [rect, setRect] = useState(null);
+  const [currentTime, setCurrentTime] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  // Handle rendering of the canvas when the rectangle or color changes
+  useEffect(() => {
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+
+      if (context && rect) {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.strokeStyle = currentColor; // Use the current color
+          context.lineWidth = 2;
+          context.strokeRect(rect.startX, rect.startY, rect.width, rect.height);
+      }
+  }, [rect, currentColor]);
+
+  // Reload video when videoSrc changes
+  useEffect(() => {
+      if (videoRef.current) {
+          videoRef.current.load(); // Reload the video when the source changes
+          setRect(null);           // Clear any annotations or drawings
+          setCurrentTime(null);     // Reset the current time
+          setEditingIndex(null);    // Exit editing mode if applicable
+      }
+  }, [videoSrc]);
+
+    // Clear canvas when video source changes
     useEffect(() => {
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d');
-
-        if (context && rect) {
+        if (context) {
             context.clearRect(0, 0, canvas.width, canvas.height);
-            context.strokeStyle = currentColor;
-            context.lineWidth = 2;
-            context.strokeRect(rect.startX, rect.startY, rect.width, rect.height);
         }
-    }, [rect, currentColor]);
+        setRect(null); // Clear any existing rectangle
+    }, [videoSrc]);
 
-    // Set the current annotation for editing
     useEffect(() => {
         if (editingIndex !== null) {
             const annotation = annotations[editingIndex];
             setCurrentTag(annotation.tag);
-            setCurrentColor(annotation.color);
+            setCurrentColor(annotation.color); // Set the color for editing
             setRect({
                 startX: annotation.x,
                 startY: annotation.y,
@@ -69,8 +89,8 @@ const AnnotationManager = ({ videoSrc, annotations, setAnnotations }) => {
         }));
     };
 
-    const handleMouseUp = async () => {
-        if (!rect || !currentTag || !currentTime) return;
+    const handleMouseUp = () => {
+        if (!rect || !currentTag) return;
 
         const newAnnotation = {
             tag: currentTag,
@@ -79,7 +99,7 @@ const AnnotationManager = ({ videoSrc, annotations, setAnnotations }) => {
             y: rect.startY,
             width: rect.width,
             height: rect.height,
-            color: currentColor,
+            color: currentColor, // Include the color
         };
 
         if (editingIndex !== null) {
@@ -93,11 +113,10 @@ const AnnotationManager = ({ videoSrc, annotations, setAnnotations }) => {
             setAnnotations([...annotations, newAnnotation]);
         }
 
-        // Reset the drawing state
         setRect(null);
         setDrawing(false);
         setCurrentTag('');
-        setCurrentColor('red');
+        setCurrentColor('red'); // Reset color to default after saving
     };
 
     const handleTimeUpdate = () => {
@@ -106,14 +125,26 @@ const AnnotationManager = ({ videoSrc, annotations, setAnnotations }) => {
         }
     };
 
-    const handleEdit = (index) => {
+    const handleAnnotationSelect = (index) => {
         setEditingIndex(index);
+        videoRef.current.currentTime = annotations[index].time;
     };
 
-    const handleDelete = (index) => {
-        setAnnotations(annotations.filter((_, i) => i !== index));
-        setEditingIndex(null);
-    };
+    const handleDeleteAnnotation = async (index) => {
+      const annotationToDelete = annotations[index];
+      try {
+          const response = await fetch(`http://localhost:5000/annotations/${selectedVideoId}/${annotationToDelete.id}`, {
+              method: 'DELETE',
+          });
+          if (!response.ok) throw new Error('Failed to delete annotation');
+          setAnnotations(annotations.filter((_, i) => i !== index));
+          setEditingIndex(null);
+      } catch (error) {
+          console.error('Error deleting annotation:', error);
+      }
+  };
+
+
 
     return (
         <div>
@@ -133,9 +164,7 @@ const AnnotationManager = ({ videoSrc, annotations, setAnnotations }) => {
                     </option>
                 ))}
             </select>
-            <button onClick={handleMouseUp}>
-                {editingIndex !== null ? 'Update Annotation' : 'Save Annotation'}
-            </button>
+            <button onClick={handleMouseUp}>{editingIndex !== null ? 'Update Annotation' : 'Save Annotation'}</button>
 
             <div
                 style={{ position: 'relative', width: '600px', margin: '20px auto' }}
@@ -166,8 +195,8 @@ const AnnotationManager = ({ videoSrc, annotations, setAnnotations }) => {
                     <li key={index}>
                         {annotation.tag} at {new Date(annotation.time * 1000).toISOString().substr(11, 8)} - Rectangle: ({annotation.x}, {annotation.y}, {annotation.width}, {annotation.height})
                         <span style={{ color: annotation.color }}> ● </span>
-                        <button onClick={() => handleEdit(index)}>Edit</button>
-                        <button onClick={() => handleDelete(index)}>Delete</button>
+                        <button onClick={() => handleAnnotationSelect(index)}>Edit</button>
+                        <button onClick={() => handleDeleteAnnotation(index)}>Delete</button>
                     </li>
                 ))}
             </ul>
