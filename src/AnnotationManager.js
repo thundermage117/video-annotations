@@ -89,35 +89,76 @@ const AnnotationManager = ({ videoSrc, annotations, setAnnotations, selectedVide
         }));
     };
 
-    const handleMouseUp = () => {
-        if (!rect || !currentTag) return;
-
-        const newAnnotation = {
-            tag: currentTag,
-            time: currentTime,
-            x: rect.startX,
-            y: rect.startY,
-            width: rect.width,
-            height: rect.height,
-            color: currentColor, // Include the color
-        };
-
-        if (editingIndex !== null) {
-            // Update existing annotation
-            const updatedAnnotations = [...annotations];
-            updatedAnnotations[editingIndex] = newAnnotation;
-            setAnnotations(updatedAnnotations);
-            setEditingIndex(null);
-        } else {
-            // Add new annotation
-            setAnnotations([...annotations, newAnnotation]);
-        }
-
-        setRect(null);
-        setDrawing(false);
-        setCurrentTag('');
-        setCurrentColor('red'); // Reset color to default after saving
-    };
+    const handleMouseUp = async () => {
+      if (!rect || !currentTag || currentTime === null || currentTime === undefined) {
+          console.error('Missing required fields for annotation');
+          return;
+      }
+  
+      // Ensure currentTime is a valid number
+      const validCurrentTime = Number(currentTime);
+      if (isNaN(validCurrentTime) || validCurrentTime < 0) {
+          console.error('Invalid currentTime value:', currentTime);
+          return;
+      }
+  
+      const newAnnotation = {
+          tag: currentTag,
+          time: validCurrentTime,
+          x: rect.startX,
+          y: rect.startY,
+          width: rect.width,
+          height: rect.height,
+          color: currentColor,
+      };
+  
+      try {
+          if (editingIndex !== null) {
+              // Update existing annotation
+              const annotationToUpdate = annotations[editingIndex];
+              const response = await fetch(`http://localhost:5000/annotations/${selectedVideoId}/${annotationToUpdate.id}`, {
+                  method: 'PUT',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(newAnnotation),
+              });
+              // Print request to console
+              console.log(`PUT http://localhost:5000/annotations/${selectedVideoId}/${annotationToUpdate.id}`);
+              // Print request body to console
+              console.log(JSON.stringify(newAnnotation));
+              if (!response.ok) throw new Error('Failed to update annotation');
+              const updatedAnnotations = [...annotations];
+              updatedAnnotations[editingIndex] = newAnnotation;
+              setAnnotations(updatedAnnotations);
+              setEditingIndex(null);
+          } else {
+              // Add new annotation
+              const response = await fetch(`http://localhost:5000/annotations/${selectedVideoId}`, {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(newAnnotation),
+              });
+              // Print request to console
+              console.log(`POST http://localhost:5000/annotations/${selectedVideoId}`);
+              // Print request body to console
+              console.log(JSON.stringify(newAnnotation));
+              if (!response.ok) throw new Error('Failed to save annotation');
+              const savedAnnotation = await response.json();
+              setAnnotations([...annotations, savedAnnotation]);
+          }
+      } catch (error) {
+          console.error('Error saving annotation:', error);
+      }
+  
+      setRect(null);
+      setDrawing(false);
+      setCurrentTag('');
+      setCurrentColor('red'); // Reset color to default after saving
+  };
+  
 
     const handleTimeUpdate = () => {
         if (videoRef.current) {
@@ -191,15 +232,24 @@ const AnnotationManager = ({ videoSrc, annotations, setAnnotations, selectedVide
             </div>
 
             <ul>
-                {annotations.map((annotation, index) => (
-                    <li key={index}>
-                        {annotation.tag} at {new Date(annotation.time * 1000).toISOString().substr(11, 8)} - Rectangle: ({annotation.x}, {annotation.y}, {annotation.width}, {annotation.height})
-                        <span style={{ color: annotation.color }}> ● </span>
-                        <button onClick={() => handleAnnotationSelect(index)}>Edit</button>
-                        <button onClick={() => handleDeleteAnnotation(index)}>Delete</button>
-                    </li>
-                ))}
-            </ul>
+    {annotations.map((annotation, index) => {
+        const date = new Date(annotation.time * 1000); // Convert time to Date object
+        const hours = String(date.getUTCHours()).padStart(2, '0'); // Pad hours to 2 digits
+        const minutes = String(date.getUTCMinutes()).padStart(2, '0'); // Pad minutes to 2 digits
+        const seconds = String(date.getUTCSeconds()).padStart(2, '0'); // Pad seconds to 2 digits
+        const formattedTime = `${hours}:${minutes}:${seconds}`; // Format as HH:MM:SS
+
+        return (
+            <li key={index}>
+                {annotation.tag} at {formattedTime} - Rectangle: ({annotation.x}, {annotation.y}, {annotation.width}, {annotation.height})
+                <span style={{ color: annotation.color }}> ● </span>
+                <button onClick={() => handleAnnotationSelect(index)}>Edit</button>
+                <button onClick={() => handleDeleteAnnotation(index)}>Delete</button>
+            </li>
+        );
+    })}
+</ul>
+
         </div>
     );
 };

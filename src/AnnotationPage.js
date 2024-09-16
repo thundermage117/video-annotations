@@ -7,6 +7,7 @@ const AnnotationPage = () => {
     const [selectedVideoId, setSelectedVideoId] = useState(null);
     const [annotations, setAnnotations] = useState([]);
     const [videoSrc, setVideoSrc] = useState('');
+    const [videoLoaded, setVideoLoaded] = useState(false); // New state to track if video is loaded
 
     // Fetch videos from backend
     const fetchVideos = async () => {
@@ -27,45 +28,35 @@ const AnnotationPage = () => {
         fetchVideos();
     }, []);
 
-    // Fetch video URL when a video is selected
-    useEffect(() => {
-        const fetchVideoUrl = async () => {
+    // Fetch video URL and annotations only when the "Use This Video" button is clicked
+    const handleUseThisVideo = async () => {
+        setVideoLoaded(false); // Reset loading state
+        try {
             if (selectedVideoId) {
-                try {
-                    const response = await fetch(`http://localhost:5000/video_url/${selectedVideoId}`);
-                    if (!response.ok) throw new Error('Failed to fetch video URL');
-                    const data = await response.json();
-                    setVideoSrc(data.url);
-                } catch (error) {
-                    console.error('Error fetching video URL:', error);
-                }
+                // Fetch the video URL
+                const videoResponse = await fetch(`http://localhost:5000/video_url/${selectedVideoId}`);
+                if (!videoResponse.ok) throw new Error('Failed to fetch video URL');
+                const videoData = await videoResponse.json();
+                setVideoSrc(videoData.url);
+
+                // Fetch annotations for the selected video
+                const annotationsResponse = await fetch(`http://localhost:5000/annotations/${selectedVideoId}`);
+                if (!annotationsResponse.ok) throw new Error('Failed to fetch annotations');
+                const annotationsData = await annotationsResponse.json();
+                setAnnotations(annotationsData);
+
+                // Set video as loaded
+                setVideoLoaded(true);
             }
-        };
-
-        fetchVideoUrl();
-    }, [selectedVideoId]);
-
-    // Fetch annotations when video changes
-    useEffect(() => {
-        const fetchAnnotations = async () => {
-            if (!selectedVideoId) return;
-            try {
-                const response = await fetch(`http://localhost:5000/annotations/${selectedVideoId}`);
-                if (!response.ok) throw new Error('Failed to fetch annotations');
-                const data = await response.json();
-                setAnnotations(data);
-            } catch (error) {
-                console.error('Error fetching annotations:', error);
-            }
-        };
-
-        fetchAnnotations();
-    }, [selectedVideoId]);
+        } catch (error) {
+            console.error('Error loading video or annotations:', error);
+        }
+    };
 
     return (
         <div>
             <h1>Video Annotation Tool</h1>
-            
+
             {/* Link to Upload Page */}
             <Link to="/">← Back to Upload Page</Link>
 
@@ -80,7 +71,11 @@ const AnnotationPage = () => {
                 </select>
             </div>
 
-            {videoSrc && selectedVideoId && (
+            {/* Button to trigger loading the selected video */}
+            <button onClick={handleUseThisVideo}>Use This Video</button>
+
+            {/* Show Annotation Manager only after video and annotations are loaded */}
+            {videoLoaded && videoSrc && selectedVideoId && (
                 <div>
                     <AnnotationManager
                         videoSrc={videoSrc}
